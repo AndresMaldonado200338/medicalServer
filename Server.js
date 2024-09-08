@@ -9,15 +9,16 @@ const app = express();
 const port = 3000;
 
 app.use(express.json());
-app.use(express.static('public'));
 app.use(cors());
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'public/images');
     },
+
     filename: (req, file, cb) => {
-        cb(null, file.originalname);
+        const uniqueSuffix = `${uuidv4()}${path.extname(file.originalname)}`;
+        cb(null, uniqueSuffix);
     }
 });
 
@@ -25,23 +26,24 @@ const upload = multer({ storage: storage });
 
 app.post('/citas/data', upload.single('file'), (req, res) => {
     const nuevaCita = req.body;
-    nuevaCita.id = uuidv4();
+    nuevaCita.Id = uuidv4();
+    nuevaCita.Estado = nuevaCita.Estado || 'activa';
+
 
     if (req.file) {
-        nuevaCita.imageFile = req.file.originalname;
+        nuevaCita.ImageFile = req.file.filename;
     }
 
     file.readFile('Data/citas.json', 'utf-8', (err, data) => {
+        let citas;
         if (err) {
             if (err.code === 'ENOENT') {
-
                 citas = [];
             } else {
                 res.status(500).send('Error al leer el archivo de citas');
                 return;
             }
         } else {
-
             try {
                 citas = JSON.parse(data);
                 if (!Array.isArray(citas)) {
@@ -56,7 +58,7 @@ app.post('/citas/data', upload.single('file'), (req, res) => {
             if (err) {
                 res.status(500).send('Error al guardar la nueva cita');
             } else {
-                res.status(201).send('Cita creada exitosamente');
+                res.status(201).json({ message: 'Cita creada exitosamente', Id: nuevaCita.Id });
             }
         });
     });
@@ -74,23 +76,6 @@ app.get('/citas/data', (req, res) => {
         } else {
             const citas = JSON.parse(data);
             res.json(citas);
-        }
-    });
-});
-
-app.get('/citas/data/:id', (req, res) => {
-    const id = req.params.id;
-    file.readFile('Data/citas.json', 'utf-8', (err, data) => {
-        if (err) {
-            res.status(500).send('Error al leer el archivo de citas');
-        } else {
-            const citas = JSON.parse(data);
-            const cita = citas.find(cita => cita.id === id);
-            if (cita) {
-                res.json(cita);
-            } else {
-                res.status(404).send('Cita no encontrada');
-            }
         }
     });
 });
@@ -118,15 +103,32 @@ app.get('/citas/data/rango', (req, res) => {
     });
 });
 
-app.put('/citas/data/:id', (req, res) => {
-    const id = req.params.id;
+app.get('/citas/data/:Id', (req, res) => {
+    const id = req.params.Id;
+    file.readFile('Data/citas.json', 'utf-8', (err, data) => {
+        if (err) {
+            res.status(500).send('Error al leer el archivo de citas');
+        } else {
+            const citas = JSON.parse(data);
+            const cita = citas.find(cita => cita.Id === id);
+            if (cita) {
+                res.json(cita);
+            } else {
+                res.status(404).send('Cita no encontrada');
+            }
+        }
+    });
+});
+
+app.put('/citas/data/:Id', (req, res) => {
+    const Id = req.params.Id;
     const nuevoEstado = req.body.Estado;
     file.readFile('Data/citas.json', 'utf-8', (err, data) => {
         if (err) {
             res.status(500).send('Error al leer el archivo de citas');
         } else {
             const citas = JSON.parse(data);
-            const cita = citas.find(cita => cita.id === id);
+            const cita = citas.find(cita => cita.Id === Id);
             if (cita) {
                 cita.Estado = nuevoEstado;
                 file.writeFile('Data/citas.json', JSON.stringify(citas, null, 2), (err) => {
@@ -141,8 +143,7 @@ app.put('/citas/data/:id', (req, res) => {
             }
         }
     });
-}
-);
+});
 
 app.listen(port, () => {
     console.log(`Servidor escuchando en http://localhost:${port}`);
