@@ -1,0 +1,19 @@
+{
+  "name": "medicalserver",
+  "version": "1.0.0",
+  "description": "Repositorio de servidor para administrador de citas médicas.",
+  "main": "Server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node --watch Server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "medicalserver": "file:",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^10.0.0"
+  }
+}
